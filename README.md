@@ -1,4 +1,4 @@
-# Gl-cklichkeit-der-Welt
+# Glücklichkeit-der-Welt
 Glücklichkeit der Welt
 hre Aufgabe besteht darin, die Glücklichkeit der Welt zu untersuchen. Insbesondere geht es darum, auf Basis der gegebenen Daten Gruppen von Merkmalen der Länder und deren Bewohner_innen zu finden, welche mit besonders großem oder besonders geringem Glück assoziiert werden können. 
 
