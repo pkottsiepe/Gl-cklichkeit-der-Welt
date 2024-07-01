@@ -1,0 +1,115 @@
+---
+title: "Statistik projekt So24"
+output: html_document
+date: "2024-06-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(dplyr)
+library(readr)
+```
+
+```{r}
+glueck <- read.csv2("World-happiness-report-updated_2024.csv", sep=",")
+glueck[glueck == ""] <- NA 
+glueck_clean <- na.omit(glueck)
+glueck_country <- glueck_clean$Country.name
+glueck_Life_vadder <- as.numeric(glueck_clean$Life.Ladder)
+glueck_year <- as.numeric(glueck_clean$year)
+glueck_BIP <- as.numeric(glueck_clean$Log.GDP.per.capita)
+glueck_social <- as.numeric(glueck_clean$Social.support)
+glueck_healthy <- as.numeric(glueck_clean$Healthy.life.expectancy.at.birth)
+glueck_freedom <- as.numeric(glueck_clean$Freedom.to.make.life.choices)
+glueck_generosity <- as.numeric(glueck_clean$Generosity)
+glueck_corruption <- as.numeric(glueck_clean$Perceptions.of.corruption)
+glueck_positiv <- as.numeric(glueck_clean$Positive.affect)
+glueck_negativ <- as.numeric(glueck_clean$Negative.affect)
+glueck_clean_new <- data.frame(glueck_country,glueck_Life_vadder,glueck_year,glueck_BIP,glueck_social,glueck_healthy,glueck_freedom,glueck_generosity,glueck_corruption,glueck_positiv,glueck_negativ)
+
+#Gruppierung der Lebenszufriedenheit
+glueck_clean_new$Life_Group <- cut(glueck_clean_new$glueck_Life_vadder, 
+                                   breaks = c(-Inf, 4, 6, Inf), 
+                                   labels = c("niedrige Lebenszufriedenheit", "mittlere Lebenszufriedenheit", "hohe Lebenszufriedenheit"))
+
+# Gruppierung der Jahre
+glueck_clean_new$Year_Group <- cut(glueck_clean_new$glueck_year, 
+                                   breaks = c(-Inf, 2009, 2014, 2019, Inf), 
+                                   labels = c("2005 - 2009", "2010 - 2014", "2015 - 2019", "2020 - 2024"))
+
+glueck_year_Life_group <- data.frame(Year_Group = glueck_clean_new$Year_Group, Life_Group = glueck_clean_new$Life_Group)
+häufig_year_Life <- as.data.frame(table(glueck_year_Life_group))
+
+
+#Gruppierung des BIP
+glueck_clean_new$BIP_Group <- glueck_clean_new$glueck_BIP
+glueck_clean_new$BIP_Group <- cut(glueck_clean_new$glueck_BIP, 
+                                  breaks = c(-Inf, 8, 10, Inf), 
+                                  labels = c("niedriger BIP", "mittlerer BIP", "hoher BIP"))
+glueck_Life_BIP <- data.frame(Life_Group = glueck_clean_new$Life_Group , BIP_Group = glueck_clean_new$BIP_Group)
+häufig_Life_BIP_tabelle <- table(glueck_Life_BIP)
+häufig_Life_BIP_frame <- as.data.frame(häufig_Life_BIP_tabelle)
+rel_häufig_Life_BIP <- as.data.frame(prop.table(häufig_Life_BIP, margin = 1) *100)
+
+
+#Balkendiagramm über Lebenszufriedenheit und Jahre 
+ggplot(häufig_year_Life, aes(x = Year_Group, y = Freq, fill = Life_Group)) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.7) + 
+  geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), size = 3, color = "black") +
+  labs(title = "Häufigkeit der Lebenszufriedenheit nach Jahrgruppen",
+       x = "Jahrgruppe",
+       y = "Anzahl der Einträge",
+       fill = "Lebenszufriedenheit") +
+  theme_minimal() +
+  scale_fill_manual(
+    values = c("niedrige Lebenszufriedenheit" = "red", 
+               "mittlere Lebenszufriedenheit" = "yellow", 
+               "hohe Lebenszufriedenheit" = "green"),
+    labels = c(
+      "Lebenszufriedenheit < 4",
+      "4 <= Lebenszufriedenheit < 6",
+      "Lebenszufriedenheit >= 6"
+    )
+  )
+
+#balkendiagramm über Lebenszufriedenheit mit BIP
+ggplot(häufig_Life_BIP_frame, aes(x = Life_Group, y = Freq, fill = BIP_Group)) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.7) + 
+  geom_text(aes(label = Freq), position = position_stack(vjust = 0.5), size = 3, color = "black") +
+  labs(title = "Häufigkeit der Lebenszufriedenheit nach BIP",
+       x = "Lebensgruppen",
+       y = "absolute Häufigkeit",
+       fill = "BIP") +
+  theme_minimal() +
+  scale_fill_manual(
+    values = c("niedriger BIP" = "red", 
+               "mittlerer BIP" = "yellow", 
+               "hoher BIP" = "green"),
+    labels = c(
+      "BIP < 8",
+      "8 <= BIP < 10",
+      "BIP >= 10"
+    )
+  )+
+theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  
+  )
+
+#Balkendiagramm über die rel. Häufigkeit von Lebenszufriedenheit und BIP
+ggplot(rel_häufig_Life_BIP, aes(x = Life_Group , y = Freq, fill = BIP_Group)) +
+geom_bar(stat = "identity") +
+geom_text(aes(label = paste0(round(Freq, 1), "%")), size = 3.5, position = position_stack(vjust = 0.5)) +
+labs(x = "Lebenszufriedenheit", y = "Relative Häufigkeit in %", fill = "BIP",title = "Relative Häufigkeit für die Lebenszufriedenheit mit dem BIP") +
+scale_fill_manual(values = c("niedriger BIP" = "red", 
+               "mittlerer BIP" = "green", 
+               "hoher BIP" = "violet")) +
+theme_minimal()+
+theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  
+  )
+
+
+
+```
